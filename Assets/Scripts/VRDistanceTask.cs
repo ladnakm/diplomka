@@ -8,6 +8,7 @@ public class VRDistanceTask : MonoBehaviour
     public CSVBarManager manager;
     public GameObject arrowPrefab;
     public GameObject compareTaskUI; 
+    public VRStudySectionManager sectionManager;
 
     [Header("VR Input - Confirm (X / A)")]
     public InputActionReference leftConfirmAction; 
@@ -36,11 +37,21 @@ public class VRDistanceTask : MonoBehaviour
 
     public void StartDistanceTasks()
     {
-        arrowA = Instantiate(arrowPrefab);
-        arrowB = Instantiate(arrowPrefab);
+        if (arrowA == null)
+        {
+            arrowA = Instantiate(arrowPrefab);
+            if (ColorUtility.TryParseHtmlString(hexColorA, out Color colorA))
+                arrowA.GetComponentInChildren<Renderer>().material.color = colorA;
+        }
+        if (arrowB == null)
+        {
+            arrowB = Instantiate(arrowPrefab);
+            if (ColorUtility.TryParseHtmlString(hexColorB, out Color colorB))
+                arrowB.GetComponentInChildren<Renderer>().material.color = colorB;
+        }
 
-        if (ColorUtility.TryParseHtmlString(hexColorA, out Color colorA)) arrowA.GetComponentInChildren<Renderer>().material.color = colorA;
-        if (ColorUtility.TryParseHtmlString(hexColorB, out Color colorB)) arrowB.GetComponentInChildren<Renderer>().material.color = colorB;
+        arrowA.SetActive(true);
+        arrowB.SetActive(true);
 
         currentTaskIndex = 0;
         ShowCurrentTask();
@@ -52,10 +63,11 @@ public class VRDistanceTask : MonoBehaviour
 
         if (currentTaskIndex >= tasks.Count)
         {
-            Debug.Log("[RESEARCH] Distance tasks complete!");
             if (arrowA != null) arrowA.SetActive(false);
             if (arrowB != null) arrowB.SetActive(false);
             if (compareTaskUI != null) compareTaskUI.SetActive(false);
+
+            if (sectionManager != null) sectionManager.OnSectionComplete();
             return;
         }
 
@@ -67,13 +79,18 @@ public class VRDistanceTask : MonoBehaviour
 
         if (currentBarA != null && currentBarB != null)
         {
-            arrowA.transform.position = currentBarA.transform.position + (Vector3.up * arrowHeightOffset);
-            arrowB.transform.position = currentBarB.transform.position + (Vector3.up * arrowHeightOffset);
+            UpdateArrowPositions();
         }
     }
 
     void Update()
     {
+        if (VRBarScaleMode.isScalingModeActive)
+        {
+            UpdateArrowPositions();
+            return;
+        }
+
         if (compareTaskUI != null && compareTaskUI.activeInHierarchy)
         {
             if (Keyboard.current != null)
@@ -126,5 +143,14 @@ public class VRDistanceTask : MonoBehaviour
         
         currentTaskIndex++;
         ShowCurrentTask();
+    }
+
+    private void UpdateArrowPositions()
+    {
+        float adjustedHeight = arrowHeightOffset * VRBarScaleMode.currentScaleMultiplier;
+        if (arrowA != null && currentBarA != null)
+            arrowA.transform.position = currentBarA.transform.position + (Vector3.up * adjustedHeight);
+        if (arrowB != null && currentBarB != null)
+            arrowB.transform.position = currentBarB.transform.position + (Vector3.up * adjustedHeight);
     }
 }

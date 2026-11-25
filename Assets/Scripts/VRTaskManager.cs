@@ -32,6 +32,8 @@ public class VRTaskManager : MonoBehaviour
     private int currentTaskIndex = 0;
     private GameObject arrowA;
     private GameObject arrowB;
+    private BarData currentBarA;
+    private BarData currentBarB;
     private string pendingSelection = ""; // Remembers the choice before confirming
 
     void OnEnable()
@@ -42,11 +44,21 @@ public class VRTaskManager : MonoBehaviour
 
     public void StartComparisonTasks()
     {
-        arrowA = Instantiate(arrowPrefab);
-        arrowB = Instantiate(arrowPrefab);
+        if (arrowA == null)
+        {
+            arrowA = Instantiate(arrowPrefab);
+            if (ColorUtility.TryParseHtmlString(hexColorA, out Color colorA))
+                arrowA.GetComponentInChildren<Renderer>().material.color = colorA;
+        }
+        if (arrowB == null)
+        {
+            arrowB = Instantiate(arrowPrefab);
+            if (ColorUtility.TryParseHtmlString(hexColorB, out Color colorB))
+                arrowB.GetComponentInChildren<Renderer>().material.color = colorB;
+        }
 
-        if (ColorUtility.TryParseHtmlString(hexColorA, out Color colorA)) arrowA.GetComponentInChildren<Renderer>().material.color = colorA;
-        if (ColorUtility.TryParseHtmlString(hexColorB, out Color colorB)) arrowB.GetComponentInChildren<Renderer>().material.color = colorB;
+        arrowA.SetActive(true);
+        arrowB.SetActive(true);
 
         currentTaskIndex = 0;
         ShowCurrentTask();
@@ -68,18 +80,23 @@ public class VRTaskManager : MonoBehaviour
         if (compareTaskUI != null) compareTaskUI.SetActive(true);
 
         ResearchTask currentTask = tasks[currentTaskIndex];
-        BarData barA = manager.allBars.Find(b => b.gameObject.name.Equals(currentTask.barNameA, System.StringComparison.OrdinalIgnoreCase));
-        BarData barB = manager.allBars.Find(b => b.gameObject.name.Equals(currentTask.barNameB, System.StringComparison.OrdinalIgnoreCase));
+        currentBarA = manager.allBars.Find(b => b.gameObject.name.Equals(currentTask.barNameA, System.StringComparison.OrdinalIgnoreCase));
+        currentBarB = manager.allBars.Find(b => b.gameObject.name.Equals(currentTask.barNameB, System.StringComparison.OrdinalIgnoreCase));
 
-        if (barA != null && barB != null)
+        if (currentBarA != null && currentBarB != null)
         {
-            arrowA.transform.position = barA.transform.position + (Vector3.up * arrowHeightOffset);
-            arrowB.transform.position = barB.transform.position + (Vector3.up * arrowHeightOffset);
+            UpdateArrowPositions();
         }
     }
 
     void Update()
     {
+        if (VRBarScaleMode.isScalingModeActive)
+        {
+            UpdateArrowPositions();
+            return;
+        }
+
         if (compareTaskUI != null && compareTaskUI.activeInHierarchy)
         {
             // 1. Arrow Keys to Select
@@ -121,5 +138,14 @@ public class VRTaskManager : MonoBehaviour
         Debug.Log($"[RESULT - VALUE] Pair: {tasks[currentTaskIndex].barNameA} vs {tasks[currentTaskIndex].barNameB} | User chose: {selectedColor}");
         currentTaskIndex++;
         ShowCurrentTask();
+    }
+
+    private void UpdateArrowPositions()
+    {
+        float adjustedHeight = arrowHeightOffset * VRBarScaleMode.currentScaleMultiplier;
+        if (arrowA != null && currentBarA != null)
+            arrowA.transform.position = currentBarA.transform.position + (Vector3.up * adjustedHeight);
+        if (arrowB != null && currentBarB != null)
+            arrowB.transform.position = currentBarB.transform.position + (Vector3.up * adjustedHeight);
     }
 }

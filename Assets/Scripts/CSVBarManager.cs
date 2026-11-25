@@ -119,5 +119,13 @@ public class CSVBarManager : MonoBehaviour
         {
             bar.SetHeightRelative(datasetIndex, minVal, maxVal, isPercentage);
         }
+
+        foreach (BarData bar in allBars)
+        {
+            float activeVal = (datasetIndex == 1) ? bar.dataset1Value : bar.dataset2Value;
+            bar.currentValue = isPercentage ? activeVal : Mathf.InverseLerp(minVal, maxVal, activeVal) * 100f;
+
+            bar.SetHeightRelative(datasetIndex, minVal, maxVal, isPercentage);
+        }
     }
 }

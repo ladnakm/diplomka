@@ -2,6 +2,11 @@ using UnityEngine;
 
 public class BarData : MonoBehaviour
 {
+    private Color lastDataColor;
+
+    [Header("Current Bar Value")]
+    public float currentValue; // Stores the currently active percentage (0-100)
+
     [Header("Bar Attributes")]
     public string categoryName;
     
@@ -45,11 +50,14 @@ public class BarData : MonoBehaviour
             finalHeight = minVisualHeight + (normalizedValue * (maxVisualHeight - minVisualHeight));
         }
 
+        currentValue = normalizedValue * 100f;
+
         // Apply height
         transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y, finalHeight);
 
         // Apply color
         Color finalColor = Color.Lerp(minColor, maxColor, normalizedValue);
+        lastDataColor = finalColor;
         GetComponent<MeshRenderer>().material.color = finalColor;
 
         // Paint buildings
@@ -60,6 +68,21 @@ public class BarData : MonoBehaviour
                 if (bldg != null)
                 {
                     foreach (Material mat in bldg.materials) mat.color = finalColor;
+                }
+            }
+        }
+    }
+
+    public void SetBuildingColorMode(bool useDataColor, Color neutralGrey)
+    {
+        Color targetColor = useDataColor ? lastDataColor : neutralGrey;
+        if (buildingRenderers != null)
+        {
+            foreach (Renderer bldg in buildingRenderers)
+            {
+                if (bldg != null)
+                {
+                    foreach (Material mat in bldg.materials) mat.color = targetColor;
                 }
             }
         }

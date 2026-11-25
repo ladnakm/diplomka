@@ -30,6 +30,7 @@ public class VRValueGuessTask : MonoBehaviour
     private int currentTaskIndex = 0;
     private float currentGuess = 50f; 
     private GameObject activeArrow;
+    private BarData currentTargetBar;
 
     void OnEnable()
     {
@@ -45,11 +46,16 @@ public class VRValueGuessTask : MonoBehaviour
         if (ColorUtility.TryParseHtmlString("#e6c229", out Color guessColor))
             activeArrow.GetComponentInChildren<Renderer>().material.color = guessColor;
 
-        Invoke("ShowCurrentTask", 2.0f);
     }
 
     void Update()
     {
+        if (VRBarScaleMode.isScalingModeActive)
+        {
+            UpdateArrowPosition();
+            return;
+        }
+
         if (currentTaskIndex >= districtsToGuess.Count) return;
 
         Vector2 stickValue = Vector2.zero;
@@ -87,12 +93,12 @@ public class VRValueGuessTask : MonoBehaviour
         if (guessTaskUI != null) guessTaskUI.SetActive(true);
 
         string targetName = districtsToGuess[currentTaskIndex];
-        BarData targetBar = manager.allBars.Find(b => b.gameObject.name.Equals(targetName, System.StringComparison.OrdinalIgnoreCase));
+        currentTargetBar = manager.allBars.Find(b => b.gameObject.name.Equals(targetName, System.StringComparison.OrdinalIgnoreCase));
 
-        if (targetBar != null)
+        if (currentTargetBar != null)
         {
             activeArrow.SetActive(true);
-            activeArrow.transform.position = targetBar.transform.position + (Vector3.up * arrowHeightOffset);
+            UpdateArrowPosition();
         }
     }
 
@@ -107,6 +113,28 @@ public class VRValueGuessTask : MonoBehaviour
         if (currentTaskIndex >= districtsToGuess.Count) return;
         Debug.Log($"[RESULT] Bar: {districtsToGuess[currentTaskIndex]} | User Guessed: {Mathf.RoundToInt(currentGuess)} %");
         currentTaskIndex++;
+        ShowCurrentTask();
+    }
+
+    private void UpdateArrowPosition()
+    {
+        if (activeArrow != null && currentTargetBar != null)
+        {
+            float adjustedHeight = arrowHeightOffset * VRBarScaleMode.currentScaleMultiplier;
+            activeArrow.transform.position = currentTargetBar.transform.position + (Vector3.up * adjustedHeight);
+        }
+    }
+
+    public void StartGuessTasks()
+    {
+        if (activeArrow == null)
+        {
+            activeArrow = Instantiate(arrowPrefab);
+            if (ColorUtility.TryParseHtmlString("#e6c229", out Color guessColor))
+                activeArrow.GetComponentInChildren<Renderer>().material.color = guessColor;
+        }
+
+        currentTaskIndex = 0;
         ShowCurrentTask();
     }
 }
